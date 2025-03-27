@@ -1,0 +1,28 @@
+Starting training for experiment: color_jitter
+Total epochs: 5
+Device: cuda
+Epoch 1/5
+  Train Loss:		0.0188	Train Accuracy:		0.8416
+  Validation Loss:	0.0108	Validation Accuracy:	0.8845
+--------------------------------------------------
+Epoch 2/5
+  Train Loss:		0.0111	Train Accuracy:		0.8829
+  Validation Loss:	0.0102	Validation Accuracy:	0.8856
+--------------------------------------------------
+Epoch 3/5
+  Train Loss:		0.0106	Train Accuracy:		0.8869
+  Validation Loss:	0.0101	Validation Accuracy:	0.8889
+--------------------------------------------------
+Epoch 4/5
+  Train Loss:		0.0104	Train Accuracy:		0.8879
+  Validation Loss:	0.0099	Validation Accuracy:	0.8913
+--------------------------------------------------
+Epoch 5/5
+  Train Loss:		0.0102	Train Accuracy:		0.8893
+  Validation Loss:	0.0098	Validation Accuracy:	0.8927
+--------------------------------------------------
+
+Final Test Results:
+Test Loss: 0.0096
+Test Accuracy: 0.8935
+Total Computation Time: 186.42 seconds

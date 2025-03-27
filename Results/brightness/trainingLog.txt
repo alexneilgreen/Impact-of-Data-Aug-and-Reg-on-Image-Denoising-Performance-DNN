@@ -1,0 +1,28 @@
+Starting training for experiment: brightness
+Total epochs: 5
+Device: cuda
+Epoch 1/5
+  Train Loss:		0.0340	Train Accuracy:		0.7564
+  Validation Loss:	0.0169	Validation Accuracy:	0.8425
+--------------------------------------------------
+Epoch 2/5
+  Train Loss:		0.0178	Train Accuracy:		0.8339
+  Validation Loss:	0.0146	Validation Accuracy:	0.8497
+--------------------------------------------------
+Epoch 3/5
+  Train Loss:		0.0161	Train Accuracy:		0.8486
+  Validation Loss:	0.0129	Validation Accuracy:	0.8743
+--------------------------------------------------
+Epoch 4/5
+  Train Loss:		0.0141	Train Accuracy:		0.8620
+  Validation Loss:	0.0116	Validation Accuracy:	0.8790
+--------------------------------------------------
+Epoch 5/5
+  Train Loss:		0.0137	Train Accuracy:		0.8665
+  Validation Loss:	0.0122	Validation Accuracy:	0.8706
+--------------------------------------------------
+
+Final Test Results:
+Test Loss: 0.0120
+Test Accuracy: 0.8718
+Total Computation Time: 183.19 seconds

@@ -1,0 +1,28 @@
+Starting training for experiment: base
+Total epochs: 5
+Device: cuda
+Epoch 1/5
+  Train Loss:		0.0141	Train Accuracy:		0.8560
+  Validation Loss:	0.0108	Validation Accuracy:	0.8759
+--------------------------------------------------
+Epoch 2/5
+  Train Loss:		0.0102	Train Accuracy:		0.8873
+  Validation Loss:	0.0098	Validation Accuracy:	0.8912
+--------------------------------------------------
+Epoch 3/5
+  Train Loss:		0.0098	Train Accuracy:		0.8909
+  Validation Loss:	0.0096	Validation Accuracy:	0.8936
+--------------------------------------------------
+Epoch 4/5
+  Train Loss:		0.0095	Train Accuracy:		0.8927
+  Validation Loss:	0.0094	Validation Accuracy:	0.8932
+--------------------------------------------------
+Epoch 5/5
+  Train Loss:		0.0094	Train Accuracy:		0.8941
+  Validation Loss:	0.0093	Validation Accuracy:	0.8968
+--------------------------------------------------
+
+Final Test Results:
+Test Loss: 0.0092
+Test Accuracy: 0.8973
+Total Computation Time: 181.33 seconds
