@@ -1,0 +1,28 @@
+Starting training for experiment: contrast
+Total epochs: 5
+Device: cuda
+Epoch 1/5
+  Train Loss:		0.0237	Train Accuracy:		0.8065
+  Validation Loss:	0.0118	Validation Accuracy:	0.8756
+--------------------------------------------------
+Epoch 2/5
+  Train Loss:		0.0137	Train Accuracy:		0.8631
+  Validation Loss:	0.0114	Validation Accuracy:	0.8753
+--------------------------------------------------
+Epoch 3/5
+  Train Loss:		0.0131	Train Accuracy:		0.8706
+  Validation Loss:	0.0118	Validation Accuracy:	0.8675
+--------------------------------------------------
+Epoch 4/5
+  Train Loss:		0.0116	Train Accuracy:		0.8791
+  Validation Loss:	0.0103	Validation Accuracy:	0.8938
+--------------------------------------------------
+Epoch 5/5
+  Train Loss:		0.0116	Train Accuracy:		0.8801
+  Validation Loss:	0.0102	Validation Accuracy:	0.8925
+--------------------------------------------------
+
+Final Test Results:
+Test Loss: 0.0102
+Test Accuracy: 0.8926
+Total Computation Time: 185.13 seconds

@@ -10,6 +10,7 @@ from torchvision import transforms
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 
 class DataAugmentationTechniques:
     """
@@ -201,6 +202,59 @@ class Trainer:
                     plt.savefig(save_path)
                     plt.close()
     
+    def FID_images(self, experiment_name='base', num_samples=5):
+        """
+        Save original and generated images for FID calculation
+        
+        Args:
+            experiment_name (str): Name of the experiment for result saving
+            num_samples (int): Number of image samples to save
+        """
+        # Create save directory following the specified format
+        save_dir = os.path.join('Results', experiment_name, 'images')
+        
+        # Create save directory if it doesn't exist
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Set model to evaluation mode
+        self.model.eval()
+        
+        # Disable gradient computation
+        with torch.no_grad():
+            for batch_idx, (noisy_images, clean_images) in enumerate(self.test_loader):
+                # Only process first batch
+                if batch_idx >= 1:
+                    break
+                
+                # Process num_samples images from the batch
+                for i in range(min(num_samples, noisy_images.size(0))):
+                    # Get individual images
+                    noisy_img = noisy_images[i]
+                    clean_img = clean_images[i]
+                    
+                    # Move images to the same device as the model
+                    noisy_img = noisy_img.to(self.device)
+                    clean_img = clean_img.to(self.device)
+                    
+                    # Denoise the image
+                    denoised_img = self.model(noisy_img.unsqueeze(0)).squeeze(0)
+                    
+                    # Move images back to CPU for saving
+                    clean_np = clean_img.cpu().squeeze().numpy()
+                    denoised_np = denoised_img.cpu().squeeze().numpy()
+                    
+                    # Normalize images to 0-255 range for saving
+                    clean_np = (clean_np * 255).astype(np.uint8)
+                    denoised_np = (denoised_np * 255).astype(np.uint8)
+                    
+                    # Save original and generated images
+                    original_path = os.path.join(save_dir, f'{i+1}_original.png')
+                    generated_path = os.path.join(save_dir, f'{i+1}_generated.png')
+                    
+                    # Use PIL to save images
+                    Image.fromarray(clean_np).save(original_path)
+                    Image.fromarray(denoised_np).save(generated_path)
+
     def train(self, epochs=10, experiment_name='base'):
         """
         Train the model and track performance metrics
@@ -319,6 +373,8 @@ class Trainer:
         
         total_time = time.time() - start_time
 
+        # Generate FID Images
+        self.FID_images(experiment_name=experiment_name)
         # Generate Visual Example
         self.visualize_denoising_results(experiment_name=experiment_name)
         
