@@ -1,11 +1,14 @@
 import os
 import csv
+import json
 import pandas as pd
 import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms
+import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
 import numpy as np
 
 class DataAugmentationTechniques:
@@ -56,6 +59,33 @@ class DataAugmentationTechniques:
     @staticmethod
     def shearing(shear=20):
         return transforms.RandomAffine(0, shear=shear)
+    
+    @staticmethod
+    def custom_augmentation_1():
+        """
+        Create a custom augmentation transform
+        
+        Returns:
+            transforms.Compose: A composition of augmentation transforms
+        """
+        def rescale_transform(x):
+            # Generate random scaling factor between 0.9 and 1.1
+            scale = 0.9 + torch.rand(1).item() * 0.2
+            return x * scale
+        
+        return transforms.Compose([
+            # Rescale image to range (0.9, 1.1)
+            transforms.Lambda(rescale_transform),
+            
+            # Rotate image with angle range (0, 20)
+            transforms.RandomRotation(degrees=(0, 20)),
+            
+            # Flip vertically with probability 0.5
+            transforms.RandomVerticalFlip(p=0.5),
+            
+            # Convert to grayscale with probability 0.5
+            transforms.RandomGrayscale(p=0.5)
+        ])
 
 class Trainer:
     def __init__(self, model, train_loader, val_loader, test_loader, augmentation=None, learning_rate=0.001):
@@ -104,6 +134,72 @@ class Trainer:
         # Save to CSV
         csv_path = os.path.join(results_dir, 'epoch_data.csv')
         epoch_data.to_csv(csv_path, index=False)
+    
+    def visualize_denoising_results(self, num_samples=5, experiment_name='base'):
+        """
+        Generate side-by-side comparisons of noisy and denoised images
+        
+        Args:
+            num_samples (int): Number of image samples to visualize
+            save_dir (str): Directory to save visual comparisons
+        """
+        # Create save directory following the specified format
+        save_dir = os.path.join('Results', experiment_name, 'visual_comparisons')
+        
+        # Create save directory if it doesn't exist
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Set model to evaluation mode
+        self.model.eval()
+        
+        # Disable gradient computation
+        with torch.no_grad():
+            for batch_idx, (noisy_images, clean_images) in enumerate(self.test_loader):
+                # Only process first batch
+                if batch_idx >= 1:
+                    break
+                
+                # Process num_samples images from the batch
+                for i in range(min(num_samples, noisy_images.size(0))):
+                    # Get individual images
+                    noisy_img = noisy_images[i]
+                    clean_img = clean_images[i]
+                    
+                    # Move images to the same device as the model
+                    noisy_img = noisy_img.to(self.device)
+                    clean_img = clean_img.to(self.device)
+                    
+                    # Denoise the image
+                    denoised_img = self.model(noisy_img.unsqueeze(0)).squeeze(0)
+                    
+                    # Move images back to CPU for visualization
+                    noisy_np = noisy_img.cpu().squeeze().numpy()
+                    clean_np = clean_img.cpu().squeeze().numpy()
+                    denoised_np = denoised_img.cpu().squeeze().numpy()
+                    
+                    # Create subplot
+                    plt.figure(figsize=(15, 6))
+                    
+                    plt.subplot(1, 3, 1)
+                    plt.title('Clean Image')
+                    plt.imshow(clean_np, cmap='gray')
+                    plt.axis('off')
+                    
+                    plt.subplot(1, 3, 2)
+                    plt.title('Noisy Image')
+                    plt.imshow(noisy_np, cmap='gray')
+                    plt.axis('off')
+                    
+                    plt.subplot(1, 3, 3)
+                    plt.title('Denoised Image')
+                    plt.imshow(denoised_np, cmap='gray')
+                    plt.axis('off')
+                    
+                    # Save the figure
+                    plt.tight_layout()
+                    save_path = os.path.join(save_dir, f'comparison_{batch_idx}_{i}.png')
+                    plt.savefig(save_path)
+                    plt.close()
     
     def train(self, epochs=10, experiment_name='base'):
         """
@@ -222,6 +318,9 @@ class Trainer:
         test_accuracy = test_correct / test_total
         
         total_time = time.time() - start_time
+
+        # Generate Visual Example
+        self.visualize_denoising_results(experiment_name=experiment_name)
         
         # Log final results
         log_and_print("\nFinal Test Results:")
@@ -244,7 +343,6 @@ class Trainer:
         }
         
         # Save results to JSON
-        import json
         with open(os.path.join(results_dir, 'results.json'), 'w') as f:
             json.dump(results, f)
 

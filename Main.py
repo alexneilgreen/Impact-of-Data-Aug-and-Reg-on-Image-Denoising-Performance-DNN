@@ -88,7 +88,8 @@ def main(experiment, epochs, learning_rate):
         'random_crop': DataAugmentationTechniques.random_crop(),
         'rotation': DataAugmentationTechniques.rotation(),
         'scaling': DataAugmentationTechniques.scaling(),
-        'shearing': DataAugmentationTechniques.shearing()
+        'shearing': DataAugmentationTechniques.shearing(),
+        'custom_augmentation_1': DataAugmentationTechniques.custom_augmentation_1()
     }
 
     # Initialize Model
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     augmentations = {
         'brightness', 'color_jitter', 'contrast', 'cutout', 
         'flipping', 'gaussian_noise', 'random_crop', 
-        'rotation', 'scaling', 'shearing'
+        'rotation', 'scaling', 'shearing', 'custom_augmentation_1'
     }
 
     parser = argparse.ArgumentParser(description='Image Denoising Experiments')

@@ -3,4 +3,5 @@ torchvision
 pandas
 numpy
 matplotlib
+scipy
 seaborn
