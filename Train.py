@@ -120,9 +120,7 @@ class Trainer:
         Args:
             results (dict): Experiment results
             results_dir (str): Directory to save results
-        """
-        import pandas as pd
-        
+        """        
         # Prepare epoch data
         epoch_data = pd.DataFrame({
             'Epoch': range(1, len(self.train_losses) + 1),
@@ -255,7 +253,7 @@ class Trainer:
                     Image.fromarray(clean_np).save(original_path)
                     Image.fromarray(denoised_np).save(generated_path)
 
-    def train(self, epochs=10, experiment_name='base'):
+    def train(self, epochs=50, experiment_name='base'):
         """
         Train the model and track performance metrics
         

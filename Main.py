@@ -128,8 +128,8 @@ if __name__ == "__main__":
     parser.add_argument('--experiment', type=str, default='base',
                         choices=['base', 'all'] + list(augmentations),
                         help='Experiment type or specific augmentation')
-    parser.add_argument('--epochs', type=int, default=10,
-                        help='Number of training epochs (default: 10)')
+    parser.add_argument('--epochs', type=int, default=50,
+                        help='Number of training epochs (default: 50)')
     parser.add_argument('--learning_rate', type=float, default=0.001,
                         help='Learning rate for optimizer (default: 0.001)')
     
