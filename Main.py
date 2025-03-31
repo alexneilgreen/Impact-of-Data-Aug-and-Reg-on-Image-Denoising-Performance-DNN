@@ -1,5 +1,6 @@
 import os
 import argparse
+import random
 import torch
 from torchvision import transforms
 from torch.utils.data import DataLoader, random_split
@@ -124,6 +125,31 @@ def get_channels_for_dataset(dataset_name):
         return 1  # Grayscale
     else:  # CIFAR10, CIFAR100, STL10 are all RGB
         return 3
+    
+def get_size_for_random_cropping(dataset_name, dataset_sizes):
+    """
+    Get a size for cropping an image based on its dataset
+    
+    Args:
+        dataset_name (str): Name of the dataset
+        dataset_sizes (dict): Maps each dataset name to the length of an image in its set
+    
+    Returns:
+        int: One dimension of the size to be used for the cropped image
+    """
+
+    # Randomly select a crop ratio between 0.8 and 0.9
+    ratio = random.uniform(0.8, 0.9)
+
+    # Find the dataset
+    if dataset_name in dataset_sizes:
+
+        # Determine the new dimensions
+        return int(ratio * dataset_sizes[dataset_name])
+
+    # Invalid dataset (will never reach here)
+    else:
+        return -1
 
 def main(experiment, dataset, epochs, learning_rate):
     """
@@ -137,6 +163,16 @@ def main(experiment, dataset, epochs, learning_rate):
     """
     # Prepare dataset
     train_loader, val_loader, test_loader = prepare_dataset(dataset_name=dataset)
+
+    # Store sizes of each dataset image in case of cropping
+    dataset_sizes = {
+        'MNIST': 28,
+        'CIFAR10': 32,
+        'CIFAR100': 32,
+        'STL10': 96
+    }
+    dataset_name_upper = dataset.upper()
+    crop_dim = get_size_for_random_cropping(dataset_name_upper, dataset_sizes)
     
     # Augmentation techniques dictionary
     augmentations = {
@@ -146,7 +182,7 @@ def main(experiment, dataset, epochs, learning_rate):
         'cutout': DataAugmentationTechniques.cutout(),
         'flipping': DataAugmentationTechniques.flipping(),
         'gaussian_noise': DataAugmentationTechniques.gaussian_noise(),
-        'random_crop': DataAugmentationTechniques.random_crop(),
+        'random_crop': DataAugmentationTechniques.random_crop(size=crop_dim, resize=dataset_sizes[dataset_name_upper]),
         'rotation': DataAugmentationTechniques.rotation(),
         'scaling': DataAugmentationTechniques.scaling(),
         'shearing': DataAugmentationTechniques.shearing(),

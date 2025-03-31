@@ -46,8 +46,11 @@ class DataAugmentationTechniques:
         return noise_transform
     
     @staticmethod
-    def random_crop(size=224):
-        return transforms.RandomCrop(size)
+    def random_crop(size=224, resize=224):
+        return transforms.Compose([
+            transforms.RandomCrop(size),
+            transforms.Resize(resize)
+        ])
     
     @staticmethod
     def rotation(degrees=45):
