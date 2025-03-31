@@ -1,0 +1,3 @@
+Starting training for experiment: random_crop_mnist
+Total epochs: 50
+Device: cuda
