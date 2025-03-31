@@ -1,6 +1,6 @@
 # Image Denoising with Augmentation
 
-This repository contains an image denoising model trained on the MNIST dataset with various augmentation techniques. The model is implemented using PyTorch, and the results of different training experiments are analyzed and visualized.
+This repository contains an image denoising model trained on multiple datasets (MNIST, CIFAR10, CIFAR100, STL10) with various augmentation techniques. The model is implemented using PyTorch, and the results of different training experiments are analyzed and visualized.
 
 ## Requirements
 
@@ -16,34 +16,45 @@ pip install -r requirements.txt
 
 ## Running the Training Script
 
-The `Main.py` script trains the image denoising model with different augmentation techniques.
+The `Main.py` script trains the image denoising model with different augmentation techniques on different datasets.
 
 ### Arguments:
 
 - `--experiment`: Name of the experiment (e.g., `base`, `gaussian_noise`, `all`)
-- `--epochs`: Number of training epochs (default: `10`)
+- `--dataset`: Dataset to use (`MNIST`, `CIFAR10`, `CIFAR100`, `STL10`)
+- `--epochs`: Number of training epochs (default: `50`)
 - `--learning_rate`: Learning rate for training (default: `0.001`)
 
 ### Basic Training
 
-To train the base model without augmentation:
+To train the base model without augmentation on MNIST:
 
 ```bash
-python Main.py --experiment base
+python Main.py --experiment base --dataset MNIST
 ```
 
-or
+or specify additional parameters:
 
 ```bash
-python Main.py --experiment base --epochs 10 --learning_rate 0.001
+python Main.py --experiment base --dataset MNIST --epochs 50 --learning_rate 0.001
 ```
+
+### Training on Different Datasets
+
+To train on CIFAR10:
+
+```bash
+python Main.py --experiment base --dataset CIFAR10 --epochs 50 --learning_rate 0.001
+```
+
+Other supported datasets: `CIFAR100`, `STL10`
 
 ### Training with Augmentations
 
 You can train with specific augmentation techniques:
 
 ```bash
-python Main.py --experiment gaussian_noise --epochs 10 --learning_rate 0.001
+python Main.py --experiment gaussian_noise --dataset MNIST --epochs 50 --learning_rate 0.001
 ```
 
 Available augmentations:
@@ -58,11 +69,12 @@ Available augmentations:
 - `rotation`
 - `scaling`
 - `shearing`
+- `custom_augmentation_1`
 
 To run all augmentations sequentially:
 
 ```bash
-python Main.py --experiment all --epochs 10 --learning_rate 0.001
+python Main.py --experiment all --dataset CIFAR10 --epochs 50 --learning_rate 0.001
 ```
 
 ## Analyzing Results
@@ -91,7 +103,3 @@ This script generates:
 ├── requirements.txt # Dependencies
 ├── README.md     # Documentation
 ```
-
-## Citation
-
-If you use this code in your research, please cite it accordingly.
