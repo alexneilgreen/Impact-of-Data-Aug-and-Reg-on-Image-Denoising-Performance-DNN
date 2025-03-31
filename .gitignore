@@ -1,0 +1,39 @@
+# Ignore data folder and all its contents
+/data/
+data/
+
+# Ignore Python cache files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore virtual environments
+venv/
+env/
+.env/
+
+# Ignore results directories
+Results/
+
+# Ignore model checkpoints
+*.pth
+*.pt
+*.h5
+*.ckpt
+
+# Ignore Jupyter Notebook
+.ipynb_checkpoints/
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore OS specific files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE specific files
+.idea/
+.vscode/
+*.swp

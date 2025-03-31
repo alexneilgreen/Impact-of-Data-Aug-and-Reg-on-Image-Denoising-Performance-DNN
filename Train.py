@@ -140,7 +140,7 @@ class Trainer:
         
         Args:
             num_samples (int): Number of image samples to visualize
-            save_dir (str): Directory to save visual comparisons
+            experiment_name (str): Name of the experiment
         """
         # Create save directory following the specified format
         save_dir = os.path.join('Results', experiment_name, 'visual_comparisons')
@@ -172,27 +172,54 @@ class Trainer:
                     denoised_img = self.model(noisy_img.unsqueeze(0)).squeeze(0)
                     
                     # Move images back to CPU for visualization
-                    noisy_np = noisy_img.cpu().squeeze().numpy()
-                    clean_np = clean_img.cpu().squeeze().numpy()
-                    denoised_np = denoised_img.cpu().squeeze().numpy()
+                    noisy_np = noisy_img.cpu().numpy()
+                    clean_np = clean_img.cpu().numpy()
+                    denoised_np = denoised_img.cpu().numpy()
                     
                     # Create subplot
                     plt.figure(figsize=(15, 6))
                     
-                    plt.subplot(1, 3, 1)
-                    plt.title('Clean Image')
-                    plt.imshow(clean_np, cmap='gray')
-                    plt.axis('off')
-                    
-                    plt.subplot(1, 3, 2)
-                    plt.title('Noisy Image')
-                    plt.imshow(noisy_np, cmap='gray')
-                    plt.axis('off')
-                    
-                    plt.subplot(1, 3, 3)
-                    plt.title('Denoised Image')
-                    plt.imshow(denoised_np, cmap='gray')
-                    plt.axis('off')
+                    # Handle different channel structures
+                    if clean_np.shape[0] == 1:  # Grayscale
+                        # Remove channel dimension for plotting
+                        clean_np = clean_np.squeeze(0)
+                        noisy_np = noisy_np.squeeze(0)
+                        denoised_np = denoised_np.squeeze(0)
+                        
+                        plt.subplot(1, 3, 1)
+                        plt.title('Clean Image')
+                        plt.imshow(clean_np, cmap='gray')
+                        plt.axis('off')
+                        
+                        plt.subplot(1, 3, 2)
+                        plt.title('Noisy Image')
+                        plt.imshow(noisy_np, cmap='gray')
+                        plt.axis('off')
+                        
+                        plt.subplot(1, 3, 3)
+                        plt.title('Denoised Image')
+                        plt.imshow(denoised_np, cmap='gray')
+                        plt.axis('off')
+                    else:  # RGB
+                        # Transpose from (C,H,W) to (H,W,C) format for matplotlib
+                        clean_np = np.transpose(clean_np, (1, 2, 0))
+                        noisy_np = np.transpose(noisy_np, (1, 2, 0))
+                        denoised_np = np.transpose(denoised_np, (1, 2, 0))
+                        
+                        plt.subplot(1, 3, 1)
+                        plt.title('Clean Image')
+                        plt.imshow(clean_np)
+                        plt.axis('off')
+                        
+                        plt.subplot(1, 3, 2)
+                        plt.title('Noisy Image')
+                        plt.imshow(noisy_np)
+                        plt.axis('off')
+                        
+                        plt.subplot(1, 3, 3)
+                        plt.title('Denoised Image')
+                        plt.imshow(denoised_np)
+                        plt.axis('off')
                     
                     # Save the figure
                     plt.tight_layout()
@@ -238,20 +265,36 @@ class Trainer:
                     denoised_img = self.model(noisy_img.unsqueeze(0)).squeeze(0)
                     
                     # Move images back to CPU for saving
-                    clean_np = clean_img.cpu().squeeze().numpy()
-                    denoised_np = denoised_img.cpu().squeeze().numpy()
+                    clean_np = clean_img.cpu().numpy()
+                    denoised_np = denoised_img.cpu().numpy()
                     
-                    # Normalize images to 0-255 range for saving
-                    clean_np = (clean_np * 255).astype(np.uint8)
-                    denoised_np = (denoised_np * 255).astype(np.uint8)
-                    
-                    # Save original and generated images
-                    original_path = os.path.join(save_dir, f'{i+1}_original.png')
-                    generated_path = os.path.join(save_dir, f'{i+1}_generated.png')
-                    
-                    # Use PIL to save images
-                    Image.fromarray(clean_np).save(original_path)
-                    Image.fromarray(denoised_np).save(generated_path)
+                    # Handle different channel structures
+                    if clean_np.shape[0] == 1:  # Grayscale (1 channel)
+                        clean_np = clean_np.squeeze(0)  # Remove channel dimension for grayscale
+                        denoised_np = denoised_np.squeeze(0)
+                        # Normalize images to 0-255 range for saving
+                        clean_np = (clean_np * 255).astype(np.uint8)
+                        denoised_np = (denoised_np * 255).astype(np.uint8)
+                        
+                        # Save using PIL
+                        Image.fromarray(clean_np).save(os.path.join(save_dir, f'{i+1}_original.png'))
+                        Image.fromarray(denoised_np).save(os.path.join(save_dir, f'{i+1}_generated.png'))
+                    else:  # RGB (3 channels)
+                        # Transpose from (C,H,W) to (H,W,C) format for PIL
+                        clean_np = np.transpose(clean_np, (1, 2, 0))
+                        denoised_np = np.transpose(denoised_np, (1, 2, 0))
+                        
+                        # Normalize images to 0-255 range for saving
+                        clean_np = (clean_np * 255).astype(np.uint8)
+                        denoised_np = (denoised_np * 255).astype(np.uint8)
+                        
+                        # Save original and generated images
+                        original_path = os.path.join(save_dir, f'{i+1}_original.png')
+                        generated_path = os.path.join(save_dir, f'{i+1}_generated.png')
+                        
+                        # Use PIL to save images
+                        Image.fromarray(clean_np).save(original_path)
+                        Image.fromarray(denoised_np).save(generated_path)
 
     def train(self, epochs=50, experiment_name='base'):
         """
