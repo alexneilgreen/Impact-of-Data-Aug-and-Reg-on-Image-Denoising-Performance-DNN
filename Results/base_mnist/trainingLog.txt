@@ -1,0 +1,28 @@
+Starting training for experiment: base_mnist
+Total epochs: 5
+Device: cuda
+Epoch 1/5
+  Train Loss:		0.0159	Train Accuracy:		0.8565
+  Validation Loss:	0.0106	Validation Accuracy:	0.8862
+--------------------------------------------------
+Epoch 2/5
+  Train Loss:		0.0102	Train Accuracy:		0.8886
+  Validation Loss:	0.0099	Validation Accuracy:	0.8931
+--------------------------------------------------
+Epoch 3/5
+  Train Loss:		0.0098	Train Accuracy:		0.8920
+  Validation Loss:	0.0097	Validation Accuracy:	0.8965
+--------------------------------------------------
+Epoch 4/5
+  Train Loss:		0.0096	Train Accuracy:		0.8936
+  Validation Loss:	0.0095	Validation Accuracy:	0.8958
+--------------------------------------------------
+Epoch 5/5
+  Train Loss:		0.0095	Train Accuracy:		0.8944
+  Validation Loss:	0.0094	Validation Accuracy:	0.8943
+--------------------------------------------------
+
+Final Test Results:
+Test Loss: 0.0094
+Test Accuracy: 0.8946
+Total Computation Time: 176.94 seconds

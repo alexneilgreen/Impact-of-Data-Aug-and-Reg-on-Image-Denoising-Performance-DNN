@@ -1,0 +1,28 @@
+Starting training for experiment: base_cifar100
+Total epochs: 5
+Device: cuda
+Epoch 1/5
+  Train Loss:		0.0265	Train Accuracy:		0.6014
+  Validation Loss:	0.0119	Validation Accuracy:	0.6786
+--------------------------------------------------
+Epoch 2/5
+  Train Loss:		0.0109	Train Accuracy:		0.7015
+  Validation Loss:	0.0104	Validation Accuracy:	0.7139
+--------------------------------------------------
+Epoch 3/5
+  Train Loss:		0.0104	Train Accuracy:		0.7135
+  Validation Loss:	0.0102	Validation Accuracy:	0.7201
+--------------------------------------------------
+Epoch 4/5
+  Train Loss:		0.0102	Train Accuracy:		0.7173
+  Validation Loss:	0.0100	Validation Accuracy:	0.7230
+--------------------------------------------------
+Epoch 5/5
+  Train Loss:		0.0100	Train Accuracy:		0.7222
+  Validation Loss:	0.0101	Validation Accuracy:	0.7208
+--------------------------------------------------
+
+Final Test Results:
+Test Loss: 0.0102
+Test Accuracy: 0.7179
+Total Computation Time: 188.88 seconds

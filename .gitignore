@@ -13,9 +13,6 @@ venv/
 env/
 .env/
 
-# Ignore results directories
-Results/
-
 # Ignore model checkpoints
 *.pth
 *.pt
