@@ -24,13 +24,14 @@ def add_noise(x, noise_factor=0.5):
     noisy = torch.clamp(noisy, 0., 1.)
     return noisy
 
-def prepare_dataset(dataset_name='MNIST', batch_size=64):
+def prepare_dataset(dataset_name='MNIST', batch_size=64, noise_factor=0.5):
     """
     Prepare dataset with noise for denoising task
     
     Args:
         dataset_name (str): Name of the dataset to use ('MNIST', 'CIFAR10', 'CIFAR100', or 'STL10')
         batch_size (int): Batch size for data loaders
+        noise_factor (float): Noise factor to be applied to tensors
     
     Returns:
         tuple: Train, validation, and test data loaders
@@ -98,7 +99,7 @@ def prepare_dataset(dataset_name='MNIST', batch_size=64):
             else:
                 img, label = self.dataset[idx]
             
-            noisy_img = add_noise(img)
+            noisy_img = add_noise(img, noise_factor)
             return noisy_img, img  # Return noisy and clean image pairs
     
     noisy_train = NoisyDataset(train_dataset)
@@ -151,7 +152,7 @@ def get_size_for_random_cropping(dataset_name, dataset_sizes):
     else:
         return -1
 
-def main(experiment, dataset, epochs, learning_rate):
+def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise):
     """
     Run experiments based on command line arguments
     
@@ -160,9 +161,11 @@ def main(experiment, dataset, epochs, learning_rate):
         dataset (str): Dataset to use
         epochs (int): Number of training epochs
         learning_rate (float): Learning rate for optimizer
+        results_dir_base (str): Base name for folder to store results
+        noise (float): Noise level to be applied to tensors
     """
     # Prepare dataset
-    train_loader, val_loader, test_loader = prepare_dataset(dataset_name=dataset)
+    train_loader, val_loader, test_loader = prepare_dataset(dataset_name=dataset, noise_factor=noise)
 
     # Store sizes of each dataset image in case of cropping
     dataset_sizes = {
@@ -193,24 +196,27 @@ def main(experiment, dataset, epochs, learning_rate):
     channels = get_channels_for_dataset(dataset)
     # Use in_channels and out_channels to match the Model.py parameters
     model = ImageDenoisingNetwork(in_channels=channels, out_channels=channels)
+
+    # Create directory base name using noise level
+    results_dir_base_with_noise = f'{results_dir_base}_{noise}'
     
     # Experiment logic
     if experiment == 'base':
-        trainer = Trainer(model, train_loader, val_loader, test_loader, learning_rate=learning_rate)
+        trainer = Trainer(model, train_loader, val_loader, test_loader, learning_rate=learning_rate, results_dir_base=results_dir_base_with_noise)
         trainer.train(epochs=epochs, experiment_name=f'base_{dataset.lower()}')
     elif experiment == 'all':
         # Train base model first
-        base_trainer = Trainer(model, train_loader, val_loader, test_loader, learning_rate=learning_rate)
+        base_trainer = Trainer(model, train_loader, val_loader, test_loader, learning_rate=learning_rate, results_dir_base=results_dir_base_with_noise)
         base_trainer.train(epochs=epochs, experiment_name=f'base_{dataset.lower()}')
         
         # Train with individual augmentations
         for aug_name, augmentation in augmentations.items():
             # Reset model for each experiment
             model = ImageDenoisingNetwork(in_channels=channels, out_channels=channels)
-            trainer = Trainer(model, train_loader, val_loader, test_loader, augmentation, learning_rate=learning_rate)
+            trainer = Trainer(model, train_loader, val_loader, test_loader, augmentation, learning_rate=learning_rate, results_dir_base=results_dir_base_with_noise)
             trainer.train(epochs=epochs, experiment_name=f'{aug_name}_{dataset.lower()}')
     elif experiment in augmentations:
-        trainer = Trainer(model, train_loader, val_loader, test_loader, augmentations[experiment], learning_rate=learning_rate)
+        trainer = Trainer(model, train_loader, val_loader, test_loader, augmentations[experiment], learning_rate=learning_rate, results_dir_base=results_dir_base_with_noise)
         trainer.train(epochs=epochs, experiment_name=f'{experiment}_{dataset.lower()}')
     else:
         raise ValueError(f"Invalid experiment: {experiment}")
@@ -234,6 +240,10 @@ if __name__ == "__main__":
                         help='Number of training epochs (default: 50)')
     parser.add_argument('--learning_rate', type=float, default=0.001,
                         help='Learning rate for optimizer (default: 0.001)')
+    parser.add_argument('--output_dir', type=str, default='Results',
+                        help='Name of output directory base folder')
+    parser.add_argument('--noise', type=float, default=0.5,
+                        help='Noise level in range [0.0, 1.0]')
     
     args = parser.parse_args()
-    main(args.experiment, args.dataset, args.epochs, args.learning_rate)
+    main(args.experiment, args.dataset, args.epochs, args.learning_rate, args.output_dir, args.noise)

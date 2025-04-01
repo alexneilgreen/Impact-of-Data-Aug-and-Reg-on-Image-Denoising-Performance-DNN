@@ -92,7 +92,7 @@ class DataAugmentationTechniques:
         ])
 
 class Trainer:
-    def __init__(self, model, train_loader, val_loader, test_loader, augmentation=None, learning_rate=0.001):
+    def __init__(self, model, train_loader, val_loader, test_loader, augmentation=None, learning_rate=0.001, results_dir_base='Results'):
         """
         Initialize trainer with model, data loaders, and optional augmentation
         
@@ -103,6 +103,7 @@ class Trainer:
             test_loader (DataLoader): Test data loader
             augmentation (callable, optional): Data augmentation transform
             learning_rate (float, optional): Learning rate for optimizer
+            results_dir_base (str, optional): Name for base folder to store results
         """
         self.model = model
         self.train_loader = train_loader
@@ -115,6 +116,8 @@ class Trainer:
         
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+
+        self.results_dir_base = results_dir_base
     
     def save_epoch_data(self, results, results_dir):
         """
@@ -146,7 +149,7 @@ class Trainer:
             experiment_name (str): Name of the experiment
         """
         # Create save directory following the specified format
-        save_dir = os.path.join('Results', experiment_name, 'visual_comparisons')
+        save_dir = os.path.join(self.results_dir_base, experiment_name, 'visual_comparisons')
         
         # Create save directory if it doesn't exist
         os.makedirs(save_dir, exist_ok=True)
@@ -239,7 +242,7 @@ class Trainer:
             num_samples (int): Number of image samples to save
         """
         # Create save directory following the specified format
-        save_dir = os.path.join('Results', experiment_name, 'images')
+        save_dir = os.path.join(self.results_dir_base, experiment_name, 'images')
         
         # Create save directory if it doesn't exist
         os.makedirs(save_dir, exist_ok=True)
@@ -311,7 +314,7 @@ class Trainer:
             dict: Training metrics
         """
         # Create results directory
-        results_dir = os.path.join('Results', experiment_name)
+        results_dir = os.path.join(self.results_dir_base, experiment_name)
         os.makedirs(results_dir, exist_ok=True)
         
         # Lists to track training progress - RESET these BEFORE training
