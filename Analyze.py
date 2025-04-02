@@ -130,8 +130,6 @@ class FIDCalculator:
         Returns:
             tuple: Preprocessed original and generated image tensors
         """
-        print(f"Function\tload_and_preprocess_images()")
-
         try:
             # Load images
             original_img = Image.open(original_path).convert('RGB')
@@ -156,8 +154,6 @@ def load_experiment_results(experiment_path):
     Returns:
         dict: Loaded results
     """
-    print(f"Function\tload_experiment_results({experiment_path})")
-
     results = {}
     
     # Try to load JSON results
@@ -185,8 +181,6 @@ def create_epoch_plots(results, experiment_path):
     if 'epoch_data' not in results:
         print(f"No epoch data found for {experiment_path}")
         return
-    
-    print(f"Function\tcreate_epoch_plots({experiment_path})")
     
     df = results['epoch_data']
     
@@ -254,11 +248,9 @@ def calculate_fid_for_experiments(results_dir, dataset):
     
     Returns:
         list: FID calculation results
-    """
-    print("Function\tcalculate_fid_for_experiments()")
-    
+    """    
     experiments = [d for d in os.listdir(results_dir) 
-                   if os.path.isdir(os.path.join(results_dir, d)) and d != '!CompareAll']
+                   if os.path.isdir(os.path.join(results_dir, d)) and d != f'!Compare_All_{dataset.lower()}']
     
     # Filter experiments by dataset
     if dataset:
@@ -328,15 +320,12 @@ def calculate_fid_for_experiments(results_dir, dataset):
         except Exception as e:
             print(f"Error computing FID for experiment {experiment}: {e}")
     
-    # Ensure !CompareAll directory exists
-    compare_all_path = os.path.join(results_dir, '!CompareAll')
+    # Ensure dataset-specific !Compare_All directory exists
+    compare_all_path = os.path.join(results_dir, f'!Compare_All_{dataset.lower()}')
     os.makedirs(compare_all_path, exist_ok=True)
     
     # Save FID results to CSV
-    if dataset:
-        fid_csv_path = os.path.join(compare_all_path, f'fid_scores_{dataset.lower()}.csv')
-    else:
-        fid_csv_path = os.path.join(compare_all_path, 'fid_scores.csv')
+    fid_csv_path = os.path.join(compare_all_path, f'fid_scores_{dataset.lower()}.csv')
     
     fid_df = pd.DataFrame(fid_results)
     fid_df.to_csv(fid_csv_path, index=False)
@@ -346,7 +335,7 @@ def calculate_fid_for_experiments(results_dir, dataset):
 def compare_all_experiments(comparison_data, fid_results, results_dir, dataset):
     """
     Create a comprehensive comparison of all experiments
-    Saves results in Results/!CompareAll folder
+    Saves results in a dataset-specific directory
     
     Args:
         comparison_data (list): List of experiment metrics
@@ -354,14 +343,18 @@ def compare_all_experiments(comparison_data, fid_results, results_dir, dataset):
         results_dir (str): Directory containing experiment results
         dataset (str): Dataset to filter experiments by
     """
-    print("Function\tcompare_all_experiments()")
-
-    # Ensure !CompareAll directory exists
-    compare_all_path = os.path.join(results_dir, '!CompareAll')
+    # Ensure dataset-specific !Compare_All directory exists
+    compare_all_path = os.path.join(results_dir, f'!Compare_All_{dataset.lower()}')
     os.makedirs(compare_all_path, exist_ok=True)
     
     # Create comparison DataFrame
     comparison_df = pd.DataFrame(comparison_data)
+    
+    # Clean experiment names by removing dataset suffix and formatting
+    dataset_suffix = f'_{dataset.lower()}'
+    comparison_df['CleanName'] = comparison_df['Experiment'].apply(
+        lambda x: ' '.join(word.capitalize() for word in x.replace(dataset_suffix, '').split('_'))
+    )
     
     # Create FID DataFrame
     fid_df = pd.DataFrame(fid_results)
@@ -378,36 +371,51 @@ def compare_all_experiments(comparison_data, fid_results, results_dir, dataset):
     # Plotting individual metrics
     metrics = ['Test Loss', 'Test Accuracy', 'Computation Time', 'FID Score']
     
+    # For certain metrics, lower is better
+    lower_is_better = {'Test Loss': True, 'Computation Time': True, 'FID Score': True}
+    
     for metric in metrics:
         plt.figure(figsize=(10, 6))
-        bars = sns.barplot(x='Experiment', y=metric, data=comparison_df)
         
-        if dataset:
-            plt.title(f'{metric} Comparison for {dataset}')
-            fig_path = os.path.join(compare_all_path, f'{metric.lower().replace(" ", "_")}_comparison_{dataset.lower()}.png')
+        # Determine top 3 experiments based on metric
+        if metric in lower_is_better and lower_is_better[metric]:
+            top_indices = comparison_df[metric].nsmallest(3).index
         else:
-            plt.title(f'{metric} Comparison')
-            fig_path = os.path.join(compare_all_path, f'{metric.lower().replace(" ", "_")}_comparison.png')
+            top_indices = comparison_df[metric].nlargest(3).index
+        
+        # Create a list of colors for the bars
+        colors = ['#1f77b4'] * len(comparison_df)  # Default blue color
+        for idx in top_indices:
+            colors[idx] = '#2ca02c'  # Green color for top performers
+        
+        # Create bar plot with cleaned names and custom colors
+        bars = plt.bar(comparison_df['CleanName'], comparison_df[metric], color=colors)
+        
+        plt.title(f'{metric} Comparison for {dataset}')
+        fig_path = os.path.join(compare_all_path, f'{metric.lower().replace(" ", "_")}_comparison_{dataset.lower()}.png')
         
         plt.xticks(rotation=45, ha='right')
+        plt.xlabel('Experiment Type')
+        plt.ylabel(metric)
         
         # Add value annotations
-        for bar in bars.patches:
+        for bar in bars:
             height = bar.get_height()
-            bars.text(bar.get_x() + bar.get_width()/2., height, 
-                      f'{height:.4f}', 
-                      ha='center', va='bottom')
+            plt.text(bar.get_x() + bar.get_width()/2., height, 
+                    f'{height:.4f}', 
+                    ha='center', va='bottom')
+        
+        # Add a legend indicating green bars are best 3 performers
+        from matplotlib.patches import Patch
+        legend_elements = [Patch(facecolor='#2ca02c', label='Best 3')]
+        plt.legend(handles=legend_elements)
         
         plt.tight_layout()
         plt.savefig(fig_path)
         plt.close()
     
-    # Save comparison data
-    if dataset:
-        csv_path = os.path.join(compare_all_path, f'experiments_comparison_{dataset.lower()}.csv')
-    else:
-        csv_path = os.path.join(compare_all_path, 'experiments_comparison.csv')
-    
+    # Save comparison data with clean names
+    csv_path = os.path.join(compare_all_path, f'experiments_comparison_{dataset.lower()}.csv')
     comparison_df.to_csv(csv_path, index=False)
 
 def main():
@@ -416,60 +424,96 @@ def main():
     """
     # Add argument parsing
     parser = argparse.ArgumentParser(description='Analyze experiment results')
-    parser.add_argument('--noise', type=float, default=0.5, 
-                        choices=[0.15, 0.25, 0.5],
-                        help='Noise level for results directory (default: 0.5)')
-    parser.add_argument('--dataset', type=str, default='MNIST',
-                        choices=['MNIST', 'CIFAR10', 'CIFAR100', 'STL10'],
-                        help='Dataset to use (default: MNIST)')
+    parser.add_argument('--noise', type=str, default='all',
+                      help='Noise level for results directory (choices: 0.15, 0.25, 0.5, all) (default: all)')
+    parser.add_argument('--dataset', type=str, default='all',
+                     help='Dataset to use (choices: MNIST, CIFAR10, CIFAR100, STL10, all) (default: all)')
     args = parser.parse_args()
     
-    # Set results directory based on noise level
-    results_dir = f'Results_{args.noise}'
-    print(f"Using results directory: {results_dir}")
-    print(f"Filtering for dataset: {args.dataset}")
+    # Define available noise levels and datasets
+    noise_levels = [0.15, 0.25, 0.5]
+    datasets = ['MNIST', 'CIFAR10', 'CIFAR100', 'STL10']
     
-    # Ensure results directory exists
-    os.makedirs(results_dir, exist_ok=True)
+    # Determine which noise levels to process
+    if args.noise.lower() == 'all':
+        noise_to_process = noise_levels
+    else:
+        try:
+            noise_value = float(args.noise)
+            if noise_value in noise_levels:
+                noise_to_process = [noise_value]
+            else:
+                print(f"Invalid noise value: {args.noise}. Using default 'all'.")
+                noise_to_process = noise_levels
+        except ValueError:
+            print(f"Invalid noise value: {args.noise}. Using default 'all'.")
+            noise_to_process = noise_levels
     
-    # Prepare data for comparison
-    comparison_data = []
+    # Determine which datasets to process
+    if args.dataset.lower() == 'all':
+        datasets_to_process = datasets
+    elif args.dataset in datasets:
+        datasets_to_process = [args.dataset]
+    else:
+        print(f"Invalid dataset: {args.dataset}. Using default 'all'.")
+        datasets_to_process = datasets
     
-    # Process each experiment
-    for experiment in os.listdir(results_dir):
-        experiment_path = os.path.join(results_dir, experiment)
+    # Process each noise level (using specific float values, never "all")
+    for noise in noise_to_process:  # noise is always a float value from noise_levels
+        results_dir = f'Results_{noise}'
+        print(f"{'='*75}")
+        print(f"\tUsing results directory: {results_dir}")
         
-        # Skip if not a directory or is !CompareAll
-        if not os.path.isdir(experiment_path) or experiment == '!CompareAll':
-            continue
+        # Ensure results directory exists
+        os.makedirs(results_dir, exist_ok=True)
         
-        # Skip if doesn't match dataset filter
-        if not experiment.lower().endswith('_' + args.dataset.lower()):
-            continue
-        
-        # Load results
-        results = load_experiment_results(experiment_path)
-        
-        # Skip if no results found
-        if not results:
-            continue
-        
-        # Create plots
-        create_epoch_plots(results, experiment_path)
-        
-        # Add to comparison data
-        comparison_data.append({
-            'Experiment': experiment,
-            'Test Loss': results.get('test_loss', 0),
-            'Test Accuracy': results.get('test_accuracy', 0),
-            'Computation Time': results.get('computation_time', 0)
-        })
-    
-    # Calculate FID for experiments
-    fid_results = calculate_fid_for_experiments(results_dir, args.dataset)
-    
-    # Create comprehensive comparison
-    compare_all_experiments(comparison_data, fid_results, results_dir, args.dataset)
+        # Process each dataset (using specific dataset names, never "all")
+        for dataset in datasets_to_process:  # dataset is always a string from datasets
+            print(f"{'='*75}")
+            print(f"\tPROCESSING NOISE LEVEL: {noise}\t\tDATASET: {dataset}")
+            print(f"{'='*75}")
+            
+            # Prepare data for comparison
+            comparison_data = []
+            
+            # Process each experiment
+            print(f"Loading experiment data and creating epoch plots for {dataset}...\n")
+            for experiment in os.listdir(results_dir):
+                experiment_path = os.path.join(results_dir, experiment)
+                
+                # Skip if not a directory or is !Compare_All
+                if not os.path.isdir(experiment_path) or experiment == '!Compare_All':
+                    continue
+                
+                # Skip if doesn't match dataset filter
+                if not experiment.lower().endswith('_' + dataset.lower()):
+                    continue
+                
+                # Load results
+                results = load_experiment_results(experiment_path)
+                
+                # Skip if no results found
+                if not results:
+                    continue
+                
+                # Create plots
+                create_epoch_plots(results, experiment_path)
+                
+                # Add to comparison data
+                comparison_data.append({
+                    'Experiment': experiment,
+                    'Test Loss': results.get('test_loss', 0),
+                    'Test Accuracy': results.get('test_accuracy', 0),
+                    'Computation Time': results.get('computation_time', 0)
+                })
+            
+            # Calculate FID for experiments using specific dataset name
+            print(f"Calculating FID results for {dataset}...\n")
+            fid_results = calculate_fid_for_experiments(results_dir, dataset)  # Using specific dataset name
+            
+            # Create comprehensive comparison using specific dataset name
+            print(f"Comparing all experiments for {dataset}...\n")
+            compare_all_experiments(comparison_data, fid_results, results_dir, dataset)  # Using specific dataset name
 
 if __name__ == "__main__":
     main()
