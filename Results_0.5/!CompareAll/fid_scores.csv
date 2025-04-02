@@ -1,5 +1,0 @@
-Experiment,FID Score,Number of Images
-base_cifar10,323.965934478393,5
-base_cifar100,332.3265531448136,5
-base_mnist,249.80102572797003,5
-base_stl10,374.0650012809331,5
