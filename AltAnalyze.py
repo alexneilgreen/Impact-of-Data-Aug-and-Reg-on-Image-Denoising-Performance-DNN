@@ -6,144 +6,14 @@ import seaborn as sns
 import torch
 import numpy as np
 import argparse
+import shutil
+import subprocess
 from scipy import linalg
 import torchvision.models as models
 from torchvision.models import Inception_V3_Weights
 import torchvision.transforms as transforms
 from PIL import Image
 
-class FIDCalculator:
-    def __init__(self, device='cuda' if torch.cuda.is_available() else 'cpu'):
-        """
-        Initialize FID calculator with pretrained Inception v3 model
-        
-        Args:
-            device (str): Computation device
-        """        
-        # Load pretrained Inception v3 model
-        self.inception_model = models.inception_v3(weights=Inception_V3_Weights.DEFAULT)
-        self.inception_model.fc = torch.nn.Identity()  # Remove classification layer
-        self.inception_model.eval()
-        self.inception_model = self.inception_model.to(device)
-        
-        self.device = device
-        
-        # Transformation for image loading
-        self.transform = transforms.Compose([
-            transforms.Resize((299, 299)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-    
-    def _compute_statistics(self, images):
-        """
-        Compute mean and covariance of image features
-        
-        Args:
-            images (torch.Tensor): Batch of images
-        
-        Returns:
-            tuple: Mean and covariance of image features
-        """
-        try:
-            # Compute features
-            with torch.no_grad():
-                features = self.inception_model(images)
-            
-            # Convert to numpy 
-            features_np = features.cpu().numpy()
-            
-            # If only one image, we can't compute meaningful covariance
-            if features_np.shape[0] == 1:
-                print("Warning: Only one image provided. Cannot compute meaningful FID.")
-                return None, None
-            
-            # Compute statistics
-            mu = np.mean(features_np, axis=0)
-            sigma = np.cov(features_np, rowvar=False)
-            
-            return mu, sigma
-        
-        except Exception as e:
-            print(f"Detailed error in feature extraction: {e}")
-            import traceback
-            traceback.print_exc()
-            return None, None
-    
-    def calculate_fid(self, real_images, generated_images):
-        """
-        Calculate Frechet Inception Distance between two image sets
-        
-        Args:
-            real_images (torch.Tensor): Batch of real/clean images
-            generated_images (torch.Tensor): Batch of generated/denoised images
-        
-        Returns:
-            float: FID score or float('inf') if calculation fails
-        """
-        # Ensure images are on the right device
-        real_images = real_images.to(self.device)
-        generated_images = generated_images.to(self.device)
-        
-        # Compute statistics with error handling
-        mu1, sigma1 = self._compute_statistics(real_images)
-        mu2, sigma2 = self._compute_statistics(generated_images)
-        
-        # Check if we have valid statistics
-        if mu1 is None or sigma1 is None or mu2 is None or sigma2 is None:
-            print("Failed to compute valid statistics for images")
-            return float('inf')
-        
-        # Compute squared difference of means
-        diff = mu1 - mu2
-        
-        try:
-            # Add small regularization term to avoid numerical instability
-            sigma1 = sigma1 + np.eye(sigma1.shape[0]) * 1e-6
-            sigma2 = sigma2 + np.eye(sigma2.shape[0]) * 1e-6
-            
-            # Compute matrix square root
-            covmean = linalg.sqrtm(sigma1.dot(sigma2))
-            
-            # Handle potential complex numbers
-            if np.iscomplexobj(covmean):
-                covmean = covmean.real
-            
-            # Calculate FID
-            fid = (diff.dot(diff) + 
-                np.trace(sigma1 + sigma2 - 2 * covmean))
-            
-            return fid
-        
-        except Exception as e:
-            print(f"Error in FID calculation: {e}")
-            return float('inf')
-    
-    def load_and_preprocess_images(self, original_path, generated_path):
-        """
-        Load and preprocess images for FID calculation
-        
-        Args:
-            original_path (str): Path to original image
-            generated_path (str): Path to generated image
-        
-        Returns:
-            tuple: Preprocessed original and generated image tensors
-        """
-        try:
-            # Load images
-            original_img = Image.open(original_path).convert('RGB')
-            generated_img = Image.open(generated_path).convert('RGB')
-            
-            # Preprocess images
-            original_tensor = self.transform(original_img).unsqueeze(0)
-            generated_tensor = self.transform(generated_img).unsqueeze(0)
-            
-            return original_tensor, generated_tensor
-        except Exception as e:
-            print(f"Error loading images: {e}")
-            return None, None
-        
 def load_experiment_results(experiment_path):
     """
     Load results from JSON and CSV files in an experiment folder
@@ -240,7 +110,7 @@ def create_epoch_plots(results, experiment_path):
 
 def calculate_fid_for_experiments(results_dir, dataset):
     """
-    Calculate FID for all experiments by batching all original and generated images
+    Calculate FID for all experiments using pytorch-fid
     
     Args:
         results_dir (str): Directory containing experiment results
@@ -259,9 +129,6 @@ def calculate_fid_for_experiments(results_dir, dataset):
     # Prepare FID results
     fid_results = []
     
-    # Initialize FID calculator
-    fid_calculator = FIDCalculator()
-    
     for experiment in experiments:
         exp_path = os.path.join(results_dir, experiment)
         
@@ -273,10 +140,16 @@ def calculate_fid_for_experiments(results_dir, dataset):
             print(f"No images folder found for experiment: {experiment}")
             continue
         
-        # Lists to store all original and generated images
-        all_original_images = []
-        all_generated_images = []
+        # Create temporary directories for original and generated images
+        temp_original_dir = os.path.join(exp_path, 'temp_original')
+        temp_generated_dir = os.path.join(exp_path, 'temp_generated')
         
+        # Create directories if they don't exist
+        os.makedirs(temp_original_dir, exist_ok=True)
+        os.makedirs(temp_generated_dir, exist_ok=True)
+        
+        # Copy images to temporary directories
+        image_count = 0
         for filename in os.listdir(images_path):
             if filename.endswith('_original.png'):
                 base_name = filename[:-13]
@@ -284,41 +157,52 @@ def calculate_fid_for_experiments(results_dir, dataset):
                 generated_path = os.path.join(images_path, f"{base_name}_generated.png")
                 
                 if os.path.exists(generated_path):
-                    try:
-                        # Load and preprocess individual images
-                        original_tensor, generated_tensor = fid_calculator.load_and_preprocess_images(
-                            original_path, generated_path
-                        )
-                        
-                        if original_tensor is not None and generated_tensor is not None:
-                            all_original_images.append(original_tensor)
-                            all_generated_images.append(generated_tensor)
-                    
-                    except Exception as e:
-                        print(f"Error processing {original_path} and {generated_path}: {e}")
+                    # Copy images to temporary directories
+                    shutil.copy(original_path, os.path.join(temp_original_dir, f"{image_count}.png"))
+                    shutil.copy(generated_path, os.path.join(temp_generated_dir, f"{image_count}.png"))
+                    image_count += 1
         
-        # Validate image sets
-        if len(all_original_images) == 0:
-            print(f"No images found for experiment: {experiment}")
+        if image_count == 0:
+            print(f"No image pairs found for experiment: {experiment}")
+            # Clean up directories
+            shutil.rmtree(temp_original_dir, ignore_errors=True)
+            shutil.rmtree(temp_generated_dir, ignore_errors=True)
             continue
         
-        # Stack all images into a single tensor
         try:
-            original_batch = torch.cat(all_original_images, dim=0)
-            generated_batch = torch.cat(all_generated_images, dim=0)
+            # Run pytorch-fid command
+            cmd = [
+                "python", "-m", "pytorch_fid", 
+                temp_original_dir, 
+                temp_generated_dir,
+                "--device", "cuda" if torch.cuda.is_available() else "cpu"
+            ]
             
-            # Compute FID for the entire batch
-            fid_score = fid_calculator.calculate_fid(original_batch, generated_batch)
+            # Execute the command and capture output
+            result = subprocess.run(cmd, capture_output=True, text=True)
             
-            # Store results
-            fid_results.append({
-                'Experiment': experiment,
-                'FID Score': fid_score,
-                'Number of Images': len(all_original_images)
-            })
+            if result.returncode == 0:
+                # Parse FID score from output
+                output = result.stdout.strip()
+                fid_score = float(output.split(":")[-1].strip())
+                
+                # Store results
+                fid_results.append({
+                    'Experiment': experiment,
+                    'FID Score': fid_score,
+                    'Number of Images': image_count
+                })
+                print(f"FID Score for {experiment}: {fid_score} (using {image_count} images)")
+            else:
+                print(f"Error running pytorch-fid for {experiment}: {result.stderr}")
         
         except Exception as e:
             print(f"Error computing FID for experiment {experiment}: {e}")
+        
+        finally:
+            # Clean up temporary directories
+            shutil.rmtree(temp_original_dir, ignore_errors=True)
+            shutil.rmtree(temp_generated_dir, ignore_errors=True)
     
     # Ensure dataset-specific !Compare_All directory exists
     compare_all_path = os.path.join(results_dir, f'!Compare_All_{dataset.lower()}')
