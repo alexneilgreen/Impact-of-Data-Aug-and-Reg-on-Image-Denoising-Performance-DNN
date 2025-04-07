@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 
+from matplotlib.patches import Patch
+
 def load_experiment_results(experiment_path):
     """
     Load results from JSON and CSV files in an experiment folder
@@ -160,7 +162,6 @@ def compare_all_experiments(comparison_data, results_dir, dataset):
                     ha='center', va='bottom')
         
         # Add a legend indicating green bars are best 3 performers
-        from matplotlib.patches import Patch
         legend_elements = [Patch(facecolor='#2ca02c', label='Best 3')]
         plt.legend(handles=legend_elements)
         

@@ -6,10 +6,11 @@ import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import transforms
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
+
+from torchvision import transforms
 from PIL import Image
 
 class DataAugmentationTechniques:
