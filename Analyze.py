@@ -183,6 +183,10 @@ def main():
                       help='Noise level for results directory (choices: 0.15, 0.25, 0.5, all) (default: all)')
     parser.add_argument('--dataset', type=str, default='all',
                      help='Dataset to use (choices: MNIST, CIFAR10, CIFAR100, STL10, all) (default: all)')
+    parser.add_argument('--regVal', type=str, default=None,
+                        choices=['L1', 'L2', 'Dr', 'ES', 'None'],
+                        help='Regularization type: L1 (L1 Regularization), L2 (L2 Regularization), ' +
+                             'Dr (Dropout), ES (Early Stopping), or None (default)')
     args = parser.parse_args()
     
     # Define available noise levels and datasets

@@ -93,7 +93,8 @@ class DataAugmentationTechniques:
         ])
 
 class Trainer:
-    def __init__(self, model, train_loader, val_loader, test_loader, augmentation=None, learning_rate=0.001, results_dir_base='Results'):
+    def __init__(self, model, train_loader, val_loader, test_loader, augmentation=None, 
+                 learning_rate=0.001, results_dir_base='Results', early_stopping_patience=10):
         """
         Initialize trainer with model, data loaders, and optional augmentation
         
@@ -105,12 +106,14 @@ class Trainer:
             augmentation (callable, optional): Data augmentation transform
             learning_rate (float, optional): Learning rate for optimizer
             results_dir_base (str, optional): Name for base folder to store results
+            early_stopping_patience (int, optional): Number of epochs to wait for improvement before stopping
         """
         self.model = model
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.test_loader = test_loader
         self.augmentation = augmentation
+        self.early_stopping_patience = early_stopping_patience
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
@@ -119,6 +122,12 @@ class Trainer:
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
         self.results_dir_base = results_dir_base
+        
+        # Initialize early stopping variables
+        self.use_early_stopping = hasattr(model, 'reg_type') and model.reg_type == 'ES'
+        self.best_val_loss = float('inf')
+        self.early_stopping_counter = 0
+        self.early_stopping_best_model = None
     
     def save_epoch_data(self, results, results_dir):
         """
@@ -234,9 +243,9 @@ class Trainer:
                     plt.savefig(save_path)
                     plt.close()
     
-    def FID_images(self, experiment_name='base', num_samples=5):
+    def result_images(self, experiment_name='base', num_samples=5):
         """
-        Save original and generated images for FID calculation
+        Save original and generated images for Figure Creation
         
         Args:
             experiment_name (str): Name of the experiment for result saving
@@ -361,6 +370,13 @@ class Trainer:
                 self.optimizer.zero_grad()
                 output = self.model(data)
                 loss = self.criterion(output, target)
+                
+                # Add regularization term if applicable
+                if hasattr(self.model, 'get_regularization_loss'):
+                    reg_loss = self.model.get_regularization_loss()
+                    if reg_loss is not None:
+                        loss += reg_loss
+                
                 loss.backward()
                 self.optimizer.step()
                 
@@ -394,6 +410,25 @@ class Trainer:
             self.val_losses.append(val_loss)
             self.val_accuracies.append(val_accuracy)
             
+            # Early stopping check
+            if self.use_early_stopping:
+                if val_loss < self.best_val_loss:
+                    self.best_val_loss = val_loss
+                    self.early_stopping_counter = 0
+                    # Save best model state
+                    self.early_stopping_best_model = {key: value.cpu().clone() 
+                                                      for key, value in self.model.state_dict().items()}
+                else:
+                    self.early_stopping_counter += 1
+                    print(f"  Early stopping counter: {self.early_stopping_counter}/{self.early_stopping_patience}", end="\r", flush=True)
+                    
+                    if self.early_stopping_counter >= self.early_stopping_patience:
+                        log_and_print(f"Early stopping triggered after epoch {epoch}")
+                        # Load best model state
+                        if self.early_stopping_best_model is not None:
+                            self.model.load_state_dict(self.early_stopping_best_model)
+                        break
+            
             # Log epoch results
             log_and_print(f"Epoch {epoch}/{epochs}")
             log_and_print(f"  Train Loss:\t\t{train_loss:.4f}\tTrain Accuracy:\t\t{train_accuracy:.4f}")
@@ -421,8 +456,8 @@ class Trainer:
         
         total_time = time.time() - start_time
 
-        # Generate FID Images
-        self.FID_images(experiment_name=experiment_name)
+        # Generate Result Images
+        self.result_images(experiment_name=experiment_name)
         # Generate Visual Example
         self.visualize_denoising_results(experiment_name=experiment_name)
         
