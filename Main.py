@@ -220,7 +220,16 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
                                  learning_rate=learning_rate, 
                                  results_dir_base=current_results_dir)
                 
-                trainer.train(epochs=epochs, experiment_name=f'base_{dataset.lower()}_reg_{current_reg if current_reg else "none"}')
+                # Add parameter values to experiment name based on regularization type
+                reg_param_suffix = ""
+                if current_reg == 'L1':
+                    reg_param_suffix = f"_{l1_lambda}"
+                elif current_reg == 'L2':
+                    reg_param_suffix = f"_{l2_lambda}"
+                elif current_reg == 'DR':
+                    reg_param_suffix = f"_{drop_rate}"
+                
+                trainer.train(epochs=epochs, experiment_name=f'base_{dataset.lower()}_reg_{current_reg}{reg_param_suffix}')
         else:
             # Initialize Model with specific regularization
             model = ImageDenoisingNetwork(in_channels=channels, out_channels=channels, 
@@ -235,7 +244,19 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
                              learning_rate=learning_rate, 
                              results_dir_base=results_dir_base_with_params)
             
-            trainer.train(epochs=epochs, experiment_name=f'base_{dataset.lower()}')
+            # Add parameter values to experiment name based on regularization type
+            reg_part = ""
+            if reg_val:
+                reg_part = f"_reg_{reg_val}"
+                # Add specific parameter value based on regularization type
+                if reg_val == 'L1':
+                    reg_part += f"_{l1_lambda}"
+                elif reg_val == 'L2':
+                    reg_part += f"_{l2_lambda}"
+                elif reg_val == 'DR':
+                    reg_part += f"_{drop_rate}"
+            
+            trainer.train(epochs=epochs, experiment_name=f'base_{dataset.lower()}{reg_part}')
     
     elif experiment == 'all':
         # For 'all' experiment, ignore regVal and proceed with just the experiment
