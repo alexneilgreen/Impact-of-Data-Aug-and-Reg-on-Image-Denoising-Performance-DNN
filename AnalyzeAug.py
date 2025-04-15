@@ -101,7 +101,7 @@ def create_epoch_plots(results, experiment_path):
     
     plt.close()
 
-def compare_all_experiments(comparison_data, results_dir, dataset):
+def compare_augmentation_experiment(comparison_data, results_dir, dataset):
     """
     Create a comprehensive comparison of all experiments
     Saves results in a dataset-specific directory
@@ -183,10 +183,6 @@ def main():
                       help='Noise level for results directory (choices: 0.15, 0.25, 0.5, all) (default: all)')
     parser.add_argument('--dataset', type=str, default='all',
                      help='Dataset to use (choices: MNIST, CIFAR10, CIFAR100, STL10, all) (default: all)')
-    parser.add_argument('--regVal', type=str, default=None,
-                        choices=['L1', 'L2', 'Dr', 'ES', 'None'],
-                        help='Regularization type: L1 (L1 Regularization), L2 (L2 Regularization), ' +
-                             'Dr (Dropout), ES (Early Stopping), or None (default)')
     args = parser.parse_args()
     
     # Define available noise levels and datasets
@@ -268,7 +264,7 @@ def main():
             
             # Create comprehensive comparison using specific dataset name
             print(f"Comparing all experiments for {dataset}...\n")
-            compare_all_experiments(comparison_data, results_dir, dataset)  # Using specific dataset name
+            compare_augmentation_experiment(comparison_data, results_dir, dataset)  # Using specific dataset name
 
 if __name__ == "__main__":
     main()

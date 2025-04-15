@@ -204,7 +204,7 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
         # Check if we should run all regularization types
         if reg_val == 'all':
             # Define regularization options to loop through
-            reg_options = ['L1', 'L2', 'DR', 'ES', None]
+            reg_options = ['L1', 'L2', 'DR', 'ES']
             
             for current_reg in reg_options:
                 # Create a new model instance for each regularization type
