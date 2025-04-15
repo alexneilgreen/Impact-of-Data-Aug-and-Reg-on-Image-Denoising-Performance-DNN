@@ -152,7 +152,7 @@ def get_size_for_random_cropping(dataset_name, dataset_sizes):
     else:
         return -1
 
-def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, reg_val=None, drop_rate=0.2, l1_lambda=1e-5, l2_lambda=1e-4):
+def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, reg_val=None, l1_lambda=1e-5, l2_lambda=1e-4, drop_rate=0.2, esp=10):
     """
     Run experiments based on command line arguments
     
@@ -164,9 +164,10 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
         results_dir_base (str): Base name for folder to store results
         noise (float): Noise level to be applied to tensors
         reg_val (str): Type of regularization to apply ('L1', 'L2', 'Dr', 'ES', 'all', or None)
-        drop_rate (float): Dropout rate for dropout regularization
         l1_lambda (float): L1 regularization strength
         l2_lambda (float): L2 regularization strength
+        drop_rate (float): Dropout rate for dropout regularization
+        esp (int): Early stopping patience - number of epochs to wait before stopping
     """
     # Prepare dataset
     train_loader, val_loader, test_loader = prepare_dataset(dataset_name=dataset, noise_factor=noise)
@@ -218,7 +219,8 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
                 
                 trainer = Trainer(model, train_loader, val_loader, test_loader, 
                                  learning_rate=learning_rate, 
-                                 results_dir_base=current_results_dir)
+                                 results_dir_base=current_results_dir,
+                                 early_stopping_patience=esp)
                 
                 # Add parameter values to experiment name based on regularization type
                 reg_param_suffix = ""
@@ -228,6 +230,8 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
                     reg_param_suffix = f"_{l2_lambda}"
                 elif current_reg == 'DR':
                     reg_param_suffix = f"_{drop_rate}"
+                elif current_reg == 'ES':
+                    reg_param_suffix = f"_{esp}"
                 
                 trainer.train(epochs=epochs, experiment_name=f'base_{dataset.lower()}_reg_{current_reg}{reg_param_suffix}')
         else:
@@ -242,7 +246,8 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
             
             trainer = Trainer(model, train_loader, val_loader, test_loader, 
                              learning_rate=learning_rate, 
-                             results_dir_base=results_dir_base_with_params)
+                             results_dir_base=results_dir_base_with_params,
+                             early_stopping_patience=esp)
             
             # Add parameter values to experiment name based on regularization type
             reg_part = ""
@@ -255,6 +260,8 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
                     reg_part += f"_{l2_lambda}"
                 elif reg_val == 'DR':
                     reg_part += f"_{drop_rate}"
+                elif reg_val == 'ES':
+                    reg_part += f"_{esp}"
             
             trainer.train(epochs=epochs, experiment_name=f'base_{dataset.lower()}{reg_part}')
     
@@ -323,17 +330,20 @@ if __name__ == "__main__":
                         choices=['L1', 'L2', 'DR', 'ES', 'None', 'all'],
                         help='Regularization type: L1 (L1 Regularization), L2 (L2 Regularization), ' +
                              'DR (Dropout), ES (Early Stopping), all (try all types), or None (default)')
-    parser.add_argument('--dropRate', type=float, default=0.2, choices=[0.2, 0.3, 0.4],
-                        help='Dropout rate for dropout regularization (default: 0.2)')
     parser.add_argument('--L1', type=float, default=1e-5, choices=[1e-5, 1e-4, 1e-3],
                         help='L1 regularization strength (default: 1e-5)')
     parser.add_argument('--L2', type=float, default=1e-4, choices=[1e-4, 1e-3, 1e-2],
                         help='L2 regularization strength (default: 1e-4)')
+    parser.add_argument('--dropRate', type=float, default=0.2, choices=[0.2, 0.3, 0.4],
+                        help='Dropout rate for dropout regularization (default: 0.2)')
+    parser.add_argument('--ESP', type=int, default=10, choices=[5, 10, 15],
+                    help='Early Stopping Patience: number of epochs to wait before stopping (default: 10)')
     
     args = parser.parse_args()
     
     # Convert 'None' string to None type
     reg_val = None if args.regVal == 'None' else args.regVal
     
-    main(args.experiment, args.dataset, args.epochs, args.learning_rate, 
-         args.output_dir, args.noise, reg_val, args.dropRate, args.L1, args.L2)
+    main(args.experiment, args.dataset, args.epochs, 
+         args.learning_rate, args.output_dir, args.noise, 
+         reg_val, args.L1, args.L2, args.dropRate, args.ESP)
