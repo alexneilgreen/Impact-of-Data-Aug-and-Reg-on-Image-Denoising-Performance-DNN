@@ -1,0 +1,1 @@
+{"train_losses": 0.05545934907098611, "val_losses": 0.02920962521370421, "train_accuracies": 0.736074550151825, "val_accuracies": 0.7370896849860537, "test_loss": 0.02882808155030202, "test_accuracy": 0.7374314859414556, "computation_time": 1030.245037317276}
