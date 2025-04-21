@@ -91,6 +91,24 @@ class DataAugmentationTechniques:
             # Convert to grayscale with probability 0.5
             transforms.RandomGrayscale(p=0.5)
         ])
+    
+    @staticmethod
+    def combined_augmentation(transform_list):
+        """
+        Combine multiple augmentation techniques
+        
+        Args:
+            transform_list (list): List of transform functions to apply
+        
+        Returns:
+            callable: A function that applies all transforms in sequence
+        """
+        def apply_all_transforms(img):
+            result = img
+            for transform in transform_list:
+                result = transform(result)
+            return result
+        return apply_all_transforms
 
 class Trainer:
     def __init__(self, model, train_loader, val_loader, test_loader, augmentation=None, 

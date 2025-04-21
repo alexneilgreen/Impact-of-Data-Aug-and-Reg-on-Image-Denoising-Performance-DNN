@@ -197,15 +197,6 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
         'custom_augmentation_1': DataAugmentationTechniques.custom_augmentation_1()
     }
 
-    #! Correct this section to have both .cutout() and .gaussian_noise()
-    finalCombination = {
-        'aug_and_reg_combo': DataAugmentationTechniques.combined_augmentation([
-            DataAugmentationTechniques.cutout(),
-            DataAugmentationTechniques.gaussian_noise()
-        ])
-    }
-    #! ====================
-
     # Get number of channels based on dataset
     channels = get_channels_for_dataset(dataset)
     
@@ -307,23 +298,21 @@ def main(experiment, dataset, epochs, learning_rate, results_dir_base, noise, re
         trainer.train(epochs=epochs, experiment_name=f'{experiment}_{dataset.lower()}')
     
     elif experiment == 'combo':
-        #! Fill in code here to train with both .cutout() and .gaussian_noise() augmentation
-        #! and to use early stopping
         # Create directory with noise level
-        results_dir_base_with_params = f'{results_dir_base}_Aug_and_Reg_Combo'
+        results_dir_base_with_params = f'{results_dir_base}_{noise}'
         
         # Initialize model with early stopping regularization
         model = ImageDenoisingNetwork(in_channels=channels, out_channels=channels, 
                                     reg_type='ES', dropout_rate=drop_rate)
         
-        # Create trainer with combined augmentation techniques
-        combined_aug = DataAugmentationTechniques.combined_augmentation([
+        # Use the combined_augmentation static method
+        aug_combo = DataAugmentationTechniques.combined_augmentation([
             DataAugmentationTechniques.cutout(),
             DataAugmentationTechniques.gaussian_noise()
         ])
         
         trainer = Trainer(model, train_loader, val_loader, test_loader,
-                        combined_aug, learning_rate=learning_rate,
+                        aug_combo, learning_rate=learning_rate,
                         results_dir_base=results_dir_base_with_params,
                         early_stopping_patience=esp)
         
