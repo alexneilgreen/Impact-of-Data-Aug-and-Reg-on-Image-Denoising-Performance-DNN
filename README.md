@@ -77,12 +77,53 @@ To run all augmentations sequentially:
 python Main.py --experiment all --dataset CIFAR10 --epochs 50 --learning_rate 0.001
 ```
 
-## Analyzing Results
+### Training with Regularizations
 
-After training, results are saved in the `Results/` directory. To analyze and visualize them, run:
+You can train with specific regularization techniques:
 
 ```bash
-python Analyze.py
+python Main.py --regVal L1 --L1 1e-3 --dataset MNIST --epochs 50 --learning_rate 0.001
+```
+
+Available regularizations:
+
+- `L1`
+- `L2`
+- `DR`
+- `ES`
+
+To run all regularizations with default tunning sequentially:
+
+```bash
+python Main.py --regVal all --dataset CIFAR10 --epochs 50 --learning_rate 0.001
+```
+
+### Training with Augmentation and Regularization Combo
+
+You can train:
+
+```bash
+python Main.py --experiment combo
+```
+
+## Analyzing Results
+
+After training, navigate to the `Analyze/` directory. To analyze and visualize results, run the following commands in order:
+
+```bash
+cd Analyze
+```
+
+```bash
+python AnalyzeAug.py
+```
+
+```bash
+python AnalyzePreProcess.py
+```
+
+```bash
+python AnalyzeReg.py
 ```
 
 This script generates:
@@ -96,10 +137,10 @@ This script generates:
 ```
 .
 ├── Main.py       # Training script
-├── Analyze.py    # Analysis and visualization script
 ├── Model.py      # Denoising model architecture
 ├── Train.py      # Training logic
-├── Results/      # Directory for storing experiment results
+├── Analyze/      # Analysis and visualization scripts
+├── Results/      # Directories for storing experiment results
 ├── requirements.txt # Dependencies
 ├── README.md     # Documentation
 ```
