@@ -1,0 +1,22 @@
+Dropout Regularization Comparison for MNIST (Noise Level: 0.15)
+================================================================================
+
+Dropout Rates sorted by Test Accuracy (highest to lowest):
+--------------------------------------------------------------------------------
+Dropout Rate: 0.200000
+  Experiment: base_mnist_reg_DR_0.2
+  Test Accuracy: 0.960082
+  Test Loss: 0.001493
+--------------------------------------------------------------------------------
+Dropout Rate: 0.300000
+  Experiment: base_mnist_reg_DR_0.3
+  Test Accuracy: 0.958752
+  Test Loss: 0.001583
+--------------------------------------------------------------------------------
+Dropout Rate: 0.400000
+  Experiment: base_mnist_reg_DR_0.4
+  Test Accuracy: 0.957200
+  Test Loss: 0.001668
+--------------------------------------------------------------------------------
+
+Report generated on: 2025-04-21 13:51:24

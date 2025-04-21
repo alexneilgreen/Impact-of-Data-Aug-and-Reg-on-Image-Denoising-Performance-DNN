@@ -1,0 +1,9 @@
+{
+    "dataset": "MNIST",
+    "noise_level": 0.25,
+    "best_es_value": 15,
+    "experiment_name": "base_mnist_reg_ES_15",
+    "test_accuracy": 0.94136433806389,
+    "test_loss": 0.0028757343756829856,
+    "date_processed": "2025-04-21 13:51:23"
+}

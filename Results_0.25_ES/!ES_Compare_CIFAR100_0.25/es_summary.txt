@@ -1,0 +1,22 @@
+Early Stopping Comparison for CIFAR100 (Noise Level: 0.25)
+================================================================================
+
+ES Values sorted by Test Accuracy (highest to lowest):
+--------------------------------------------------------------------------------
+ES Value: 5
+  Experiment: base_cifar100_reg_ES_5
+  Test Accuracy: 0.884598
+  Test Loss: 0.004171
+--------------------------------------------------------------------------------
+ES Value: 10
+  Experiment: base_cifar100_reg_ES_10
+  Test Accuracy: 0.883428
+  Test Loss: 0.004200
+--------------------------------------------------------------------------------
+ES Value: 15
+  Experiment: base_cifar100_reg_ES_15
+  Test Accuracy: 0.882246
+  Test Loss: 0.004238
+--------------------------------------------------------------------------------
+
+Report generated on: 2025-04-21 13:51:23

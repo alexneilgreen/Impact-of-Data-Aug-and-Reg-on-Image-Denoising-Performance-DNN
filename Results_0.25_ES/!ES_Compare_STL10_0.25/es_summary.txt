@@ -1,0 +1,22 @@
+Early Stopping Comparison for STL10 (Noise Level: 0.25)
+================================================================================
+
+ES Values sorted by Test Accuracy (highest to lowest):
+--------------------------------------------------------------------------------
+ES Value: 10
+  Experiment: base_stl10_reg_ES_10
+  Test Accuracy: 0.901948
+  Test Loss: 0.003747
+--------------------------------------------------------------------------------
+ES Value: 15
+  Experiment: base_stl10_reg_ES_15
+  Test Accuracy: 0.901042
+  Test Loss: 0.003773
+--------------------------------------------------------------------------------
+ES Value: 5
+  Experiment: base_stl10_reg_ES_5
+  Test Accuracy: 0.896120
+  Test Loss: 0.003955
+--------------------------------------------------------------------------------
+
+Report generated on: 2025-04-21 13:51:23

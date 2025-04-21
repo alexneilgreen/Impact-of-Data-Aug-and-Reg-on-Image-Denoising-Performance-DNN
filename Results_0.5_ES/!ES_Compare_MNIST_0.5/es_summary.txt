@@ -1,0 +1,22 @@
+Early Stopping Comparison for MNIST (Noise Level: 0.5)
+================================================================================
+
+ES Values sorted by Test Accuracy (highest to lowest):
+--------------------------------------------------------------------------------
+ES Value: 5
+  Experiment: base_mnist_reg_ES_5
+  Test Accuracy: 0.901417
+  Test Loss: 0.008528
+--------------------------------------------------------------------------------
+ES Value: 15
+  Experiment: base_mnist_reg_ES_15
+  Test Accuracy: 0.901326
+  Test Loss: 0.008516
+--------------------------------------------------------------------------------
+ES Value: 10
+  Experiment: base_mnist_reg_ES_10
+  Test Accuracy: 0.901154
+  Test Loss: 0.008506
+--------------------------------------------------------------------------------
+
+Report generated on: 2025-04-21 13:51:23

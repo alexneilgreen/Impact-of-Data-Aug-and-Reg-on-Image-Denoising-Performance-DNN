@@ -1,0 +1,9 @@
+{
+    "dataset": "STL10",
+    "noise_level": 0.5,
+    "best_dropout_rate": 0.2,
+    "experiment_name": "base_stl10_reg_DR_0.2",
+    "test_accuracy": 0.7814312133789062,
+    "test_loss": 0.008200717560946941,
+    "date_processed": "2025-04-21 13:51:25"
+}

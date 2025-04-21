@@ -1,0 +1,22 @@
+Dropout Regularization Comparison for CIFAR100 (Noise Level: 0.15)
+================================================================================
+
+Dropout Rates sorted by Test Accuracy (highest to lowest):
+--------------------------------------------------------------------------------
+Dropout Rate: 0.300000
+  Experiment: base_cifar100_reg_DR_0.3
+  Test Accuracy: 0.925391
+  Test Loss: 0.003113
+--------------------------------------------------------------------------------
+Dropout Rate: 0.400000
+  Experiment: base_cifar100_reg_DR_0.4
+  Test Accuracy: 0.915875
+  Test Loss: 0.003406
+--------------------------------------------------------------------------------
+Dropout Rate: 0.200000
+  Experiment: base_cifar100_reg_DR_0.2
+  Test Accuracy: 0.876942
+  Test Loss: 0.004141
+--------------------------------------------------------------------------------
+
+Report generated on: 2025-04-21 13:51:24

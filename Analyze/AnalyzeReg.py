@@ -18,29 +18,53 @@ def load_experiment_results(experiment_path):
         dict: Loaded results
     """
     results = {}
-    # print(f"\t\tFilePath: Loading results from {experiment_path}")
     
     # Try to load JSON results
     json_path = os.path.join(experiment_path, 'results.json')
-    # print(f"\t\tFilePath: Looking for JSON at {json_path}")
     if os.path.exists(json_path):
-        # print(f"\t\tFilePath: Found JSON file: {json_path}")
         with open(json_path, 'r') as f:
             results = json.load(f)
-    # else:
-        # print(f"\t\tFilePath: JSON file not found at {json_path}")
+    else:
+        print(f"\t\tFilePath: JSON file not found at {json_path}")
     
     # Check for CSV files
     csv_path = os.path.join(experiment_path, 'epoch_data.csv')
-    # print(f"\t\tFilePath: Looking for CSV at {csv_path}")
     if os.path.exists(csv_path):
-        # print(f"\t\tFilePath: Found CSV file: {csv_path}")
         results['epoch_data'] = pd.read_csv(csv_path)
-    # else:
-        # print(f"\t\tFilePath: CSV file not found at {csv_path}")
+    else:
+        print(f"\t\tFilePath: CSV file not found at {csv_path}")
     
-    # print(f"\t\tFilePath: Results keys found: {list(results.keys()) if results else 'None'}")
     return results
+
+def load_best_reg_parameter(experiment_path, reg_type):
+    """
+    Load best regularization parameter value from summary JSON file
+    
+    Args:
+        experiment_path (str): Path to experiment folder
+        reg_type (str): Regularization type (L1, L2, DR, ES)
+    
+    Returns:
+        str: Parameter value as string, or None if not found
+    """
+    reg_type_lower = reg_type.lower()
+    json_path = os.path.join(experiment_path, f'best_{reg_type_lower}_summary.json')
+    
+    if os.path.exists(json_path):
+        with open(json_path, 'r') as f:
+            summary_data = json.load(f)
+            
+        # Extract parameter based on regularization type
+        if reg_type == 'L1':
+            return str(summary_data.get('best_l1_value'))
+        elif reg_type == 'L2':
+            return str(summary_data.get('best_l2_value'))
+        elif reg_type == 'DR':
+            return str(summary_data.get('best_dropout_rate'))
+        elif reg_type == 'ES':
+            return str(summary_data.get('best_es_value'))
+    
+    return None
 
 def create_epoch_plots(results, experiment_path):
     """
@@ -111,12 +135,11 @@ def create_epoch_plots(results, experiment_path):
     
     plt.close()
 
-def get_reg_directories(base_dir, noise_level):
+def get_reg_directories(noise_level):
     """
     Find all regularization directories for a given noise level
     
     Args:
-        base_dir (str): Base directory to search in
         noise_level (float): Noise level to match
     
     Returns:
@@ -125,25 +148,16 @@ def get_reg_directories(base_dir, noise_level):
     reg_dirs = {}
     base_dir_name = f"../Results_{noise_level}"
     
-    # print(f"\t\tFilePath: Looking for base directory: {base_dir_name}")
     # Look for base directory
     if os.path.isdir(base_dir_name):
         reg_dirs['None'] = base_dir_name
-        # print(f"\t\tFilePath: Found base directory: {base_dir_name}")
-    # else:
-        # print(f"\t\tFilePath: Base directory not found: {base_dir_name}")
     
     # Look for regularization directories
     for reg_type in ['L1', 'L2', 'DR', 'ES']:
-        reg_dir_name = f"Results_{noise_level}_{reg_type}"
-        # print(f"\t\tFilePath: Looking for reg directory: {reg_dir_name}")
+        reg_dir_name = f"../Results_{noise_level}_{reg_type}"
         if os.path.isdir(reg_dir_name):
             reg_dirs[reg_type] = reg_dir_name
-            # print(f"\t\tFilePath: Found reg directory: {reg_dir_name}")
-        # else:
-            # print(f"\t\tFilePath: Reg directory not found: {reg_dir_name}")
     
-    # print(f"\t\tFilePath: Found directories: {reg_dirs}")
     return reg_dirs
 
 def find_base_experiments(base_dir, dataset):
@@ -158,33 +172,65 @@ def find_base_experiments(base_dir, dataset):
         dict: Dictionary mapping experiment names to experiment paths
     """
     base_experiments = {}
-    # print(f"\t\tFilePath: Searching for base experiments in: {base_dir} for dataset: {dataset}")
     
     # Look for experiments in the base directory
     if not os.path.isdir(base_dir):
-        # print(f"\t\tFilePath: Base directory not found: {base_dir}")
         return base_experiments
         
     for experiment in os.listdir(base_dir):
         experiment_path = os.path.join(base_dir, experiment)
-        # print(f"\t\tFilePath: Evaluating path: {experiment_path}")
         
         # Skip if not a directory or is a comparison directory
         if not os.path.isdir(experiment_path) or experiment.startswith('!Compare'):
-            # print(f"\t\tFilePath: Skipping (not a directory or comparison dir): {experiment_path}")
             continue
-        
-        # Check if it's a base experiment and contains dataset name
-        if not experiment.startswith('base_') or dataset.lower() not in experiment.lower():
-            # print(f"\t\tFilePath: Skipping (not a base exp or doesn't contain dataset): {experiment}")
+
+        # Check if it's a base experiment and exactly matches the dataset name
+        if not experiment.startswith('base_'):
+            continue
+        exp_dataset = experiment[len('base_'):].split('_')[0].lower()
+        if exp_dataset != dataset.lower():
             continue
         
         # Add to dictionary
         base_experiments[experiment] = experiment_path
-        # print(f"\t\tFilePath: Added base experiment: {experiment} at {experiment_path}")
     
-    # print(f"\t\tFilePath: Found base experiments: {base_experiments}")
     return base_experiments
+
+def find_best_reg_experiments(reg_dir, reg_type, dataset, noise_level):
+    """
+    Find best regularization experiments for a dataset and noise level
+    
+    Args:
+        reg_dir (str): Directory to search in
+        reg_type (str): Regularization type
+        dataset (str): Dataset name
+        noise_level (float): Noise level
+    
+    Returns:
+        dict: Dictionary mapping experiment names to experiment paths
+    """
+    best_experiments = {}
+    
+    # Check if directory exists
+    if not os.path.isdir(reg_dir):
+        return best_experiments
+    
+    # Create pattern to match
+    pattern = f"!Best_{reg_type}_{dataset}_{noise_level}"
+    
+    for experiment in os.listdir(reg_dir):
+        experiment_path = os.path.join(reg_dir, experiment)
+        
+        # Skip if not a directory
+        if not os.path.isdir(experiment_path):
+            continue
+        
+        # Check if it matches the pattern
+        if experiment.startswith(pattern):
+            best_experiments[experiment] = experiment_path
+            break  # Only need one match
+    
+    return best_experiments
 
 def compare_regularization_experiments(noise_level, dataset):
     """
@@ -195,37 +241,29 @@ def compare_regularization_experiments(noise_level, dataset):
         dataset (str): Dataset name to filter by
     """
     # Find all relevant directories
-    # print(f"\t\tFilePath: Finding directories for noise level: {noise_level}")
-    reg_dirs = get_reg_directories(".", noise_level)
+    reg_dirs = get_reg_directories(noise_level)
     
     if 'None' not in reg_dirs:
-        # print(f"\t\tFilePath: Base directory Results_{noise_level} not found. Skipping analysis.")
         return
         
     # Create directory for comparison results
-    compare_reg_path = os.path.join('Reg_Compare', f'{dataset.lower()}_{noise_level}')
+    compare_reg_path = os.path.join('../Reg_Compare', f'{dataset.lower()}_{noise_level}')
     os.makedirs(compare_reg_path, exist_ok=True)
-    # print(f"\t\tFilePath: Created comparison directory: {compare_reg_path}")
     
     # Find base experiments
-    # print(f"\t\tFilePath: Looking for base experiments in {reg_dirs['None']}")
     base_experiments = find_base_experiments(reg_dirs['None'], dataset)
     
     if not base_experiments:
-        # print(f"\t\tFilePath: No base experiments found for {dataset} in {reg_dirs['None']}. Skipping analysis.")
         return
     
     # Group regularization experiments by base name
     for base_exp_name, base_exp_path in base_experiments.items():
-        # print(f"\t\tFilePath: Processing base experiment: {base_exp_name} at {base_exp_path}")
         # Initialize data structure to store experiment results
         reg_comparisons = {}
         
         # Load base experiment results
         base_results = load_experiment_results(base_exp_path)
-        # print(f"\t\tFilePath: Base results loaded: {bool(base_results)}")
         if not base_results:
-            # print(f"\t\tFilePath: No results found for base experiment {base_exp_name}. Skipping.")
             continue
             
         # Add base experiment to comparisons
@@ -235,35 +273,31 @@ def compare_regularization_experiments(noise_level, dataset):
             'test_loss': base_results.get('test_loss', 0),
             'test_accuracy': base_results.get('test_accuracy', 0),
             'computation_time': base_results.get('computation_time', 0),
-            'epoch_data': base_results.get('epoch_data')
+            'epoch_data': base_results.get('epoch_data'),
+            'display_name': 'None'  # New field for display name
         }
         
         # Find and load regularization experiment results
         for reg_type, reg_dir in reg_dirs.items():
             if reg_type == 'None':
                 continue  # Skip base directory, already processed
-                
-            # print(f"\t\tFilePath: Looking for matching experiments in {reg_dir}")
-            # Look for matching experiment in the regularization directory
-            for experiment in os.listdir(reg_dir):
-                experiment_path = os.path.join(reg_dir, experiment)
-                # print(f"\t\tFilePath: Evaluating reg experiment: {experiment_path}")
-                
-                # Skip if not a directory or is a comparison directory
-                if not os.path.isdir(experiment_path) or experiment.startswith('!Compare'):
-                    # print(f"\t\tFilePath: Skipping (not a directory or comparison dir): {experiment_path}")
-                    continue
-                
-                # Modified check: Look for experiments that contain the dataset name and are base experiments
-                if not (dataset.lower() in experiment.lower() and experiment.startswith('base_')):
-                    # print(f"\t\tFilePath: Skipping (doesn't contain dataset or not base exp): {experiment}")
-                    continue
-                
+            
+            # Look for best regularization experiment
+            best_experiments = find_best_reg_experiments(reg_dir, reg_type, dataset, noise_level)
+            
+            for experiment, experiment_path in best_experiments.items():
                 # Load results
                 results = load_experiment_results(experiment_path)
-                # print(f"\t\tFilePath: Results loaded for {experiment_path}: {bool(results)}")
                 if not results:
                     continue
+                
+                # Load best regularization parameter
+                param_value = load_best_reg_parameter(experiment_path, reg_type)
+                
+                # Create display name with parameter value
+                display_name = reg_type
+                if param_value:
+                    display_name = f"{reg_type} {param_value}"
                 
                 # Add to comparisons
                 reg_comparisons[reg_type] = {
@@ -272,21 +306,19 @@ def compare_regularization_experiments(noise_level, dataset):
                     'test_loss': results.get('test_loss', 0),
                     'test_accuracy': results.get('test_accuracy', 0),
                     'computation_time': results.get('computation_time', 0),
-                    'epoch_data': results.get('epoch_data')
+                    'epoch_data': results.get('epoch_data'),
+                    'display_name': display_name  # New field for display name
                 }
-                # print(f"\t\tFilePath: Added reg experiment to comparisons: {reg_type}")
         
         # Create comparison DataFrame
-        # print(f"\t\tFilePath: Number of reg comparisons found: {len(reg_comparisons)}")
         if len(reg_comparisons) <= 1:
-            # print(f"\t\tFilePath: No regularization experiments found for {base_exp_name}. Skipping comparison.")
             continue
             
-        # Rest of function remains the same...
         comparison_data = []
         for reg_type, exp_data in reg_comparisons.items():
             comparison_data.append({
                 'Regularization': reg_type,
+                'Display Name': exp_data['display_name'],  # New field for display
                 'Test Loss': exp_data['test_loss'],
                 'Test Accuracy': exp_data['test_accuracy'],
                 'Computation Time': exp_data['computation_time']
@@ -298,9 +330,8 @@ def compare_regularization_experiments(noise_level, dataset):
         base_name_clean = base_exp_name.replace('/', '_').replace('\\', '_')
         csv_path = os.path.join(compare_reg_path, f'{base_name_clean}_reg_comparison.csv')
         comparison_df.to_csv(csv_path, index=False)
-        # print(f"\t\tFilePath: Saved comparison CSV to {csv_path}")
         
-        # Create bar plots for each metric
+        # When creating bar plots for each metric
         metrics = ['Test Loss', 'Test Accuracy', 'Computation Time']
         for metric in metrics:
             plt.figure(figsize=(10, 6))
@@ -308,24 +339,44 @@ def compare_regularization_experiments(noise_level, dataset):
             # Determine if lower is better for this metric
             lower_is_better = metric in ['Test Loss', 'Computation Time']
             
-            # Sort by metric value
+            # Create a copy of the DataFrame for custom sorting
+            comparison_df_plot = comparison_df.copy()
+            
+            # Create a custom sort order: 'None' first, then others sorted by metric
             if lower_is_better:
-                comparison_df_sorted = comparison_df.sort_values(by=metric)
+                reg_sorted = comparison_df[comparison_df['Regularization'] != 'None'].sort_values(by=metric)['Regularization'].tolist()
             else:
-                comparison_df_sorted = comparison_df.sort_values(by=metric, ascending=False)
+                reg_sorted = comparison_df[comparison_df['Regularization'] != 'None'].sort_values(by=metric, ascending=False)['Regularization'].tolist()
+                
+            # Final sort order: 'None' first, then others
+            sort_order = ['None'] + reg_sorted
+            
+            # Create a new category column with proper order
+            comparison_df_plot['Order'] = comparison_df_plot['Regularization'].apply(lambda x: sort_order.index(x))
+            comparison_df_plot = comparison_df_plot.sort_values('Order')
+            
+            # Get the best regularization method (not including 'None')
+            reg_only_df = comparison_df[comparison_df['Regularization'] != 'None']
+            if not reg_only_df.empty:
+                if lower_is_better:
+                    best_reg = reg_only_df.sort_values(by=metric).iloc[0]['Regularization']
+                else:
+                    best_reg = reg_only_df.sort_values(by=metric, ascending=False).iloc[0]['Regularization']
+            else:
+                best_reg = None
             
             # Highlight the base (no regularization) and best performer
             colors = []
-            for reg_type in comparison_df_sorted['Regularization']:
+            for reg_type in comparison_df_plot['Regularization']:
                 if reg_type == 'None':
                     colors.append('#1f77b4')  # Blue for base
-                elif reg_type == comparison_df_sorted['Regularization'].iloc[0]:
-                    colors.append('#2ca02c')  # Green for best
+                elif reg_type == best_reg:
+                    colors.append('#2ca02c')  # Green for best regularization
                 else:
                     colors.append('#ff7f0e')  # Orange for others
             
-            # Create bar plot
-            bars = plt.bar(comparison_df_sorted['Regularization'], comparison_df_sorted[metric], color=colors)
+            # Create bar plot with the custom order and display names
+            bars = plt.bar(comparison_df_plot['Display Name'], comparison_df_plot[metric], color=colors)
             
             plt.title(f'{metric} Comparison for {dataset} - {base_exp_name} (Noise: {noise_level})')
             plt.xlabel('Regularization Type')
@@ -341,7 +392,7 @@ def compare_regularization_experiments(noise_level, dataset):
             # Add legend
             legend_elements = [
                 Patch(facecolor='#1f77b4', label='No Regularization'),
-                Patch(facecolor='#2ca02c', label='Best Performer'),
+                Patch(facecolor='#2ca02c', label='Best Regularization'),
                 Patch(facecolor='#ff7f0e', label='Other Regularization')
             ]
             plt.legend(handles=legend_elements)
@@ -351,7 +402,6 @@ def compare_regularization_experiments(noise_level, dataset):
             # Save plot
             plot_path = os.path.join(compare_reg_path, f'{base_name_clean}_{metric.lower().replace(" ", "_")}.png')
             plt.savefig(plot_path)
-            # print(f"\t\tFilePath: Saved plot to {plot_path}")
             plt.close()
 
 def create_overall_comparison(datasets, noise_levels):
@@ -363,7 +413,7 @@ def create_overall_comparison(datasets, noise_levels):
         noise_levels (list): List of noise levels to analyze
     """
     # Create overall comparison directory
-    overall_dir = os.path.join('Reg_Compare', '!Compare_Reg_Overall')
+    overall_dir = os.path.join('../Reg_Compare', '!Compare_Reg_Overall')
     os.makedirs(overall_dir, exist_ok=True)
     
     # Prepare data structure to store best regularization for each dataset and noise level
@@ -371,7 +421,7 @@ def create_overall_comparison(datasets, noise_levels):
     
     for noise in noise_levels:
         # Find all regularization directories for this noise level
-        reg_dirs = get_reg_directories(".", noise)
+        reg_dirs = get_reg_directories(noise)
         
         if 'None' not in reg_dirs:
             continue
@@ -398,18 +448,10 @@ def create_overall_comparison(datasets, noise_levels):
                     if reg_type == 'None':
                         continue  # Skip base directory
                         
-                    # Look for matching experiment in the regularization directory
-                    for experiment in os.listdir(reg_dir):
-                        experiment_path = os.path.join(reg_dir, experiment)
-                        
-                        # Skip if not a directory
-                        if not os.path.isdir(experiment_path) or experiment.startswith('!Compare'):
-                            continue
-                        
-                        # Skip if doesn't match dataset filter or isn't a base experiment
-                        if not experiment.lower().endswith('_' + dataset.lower()) or not experiment.startswith('base_'):
-                            continue
-                        
+                    # Look for best regularization experiment
+                    best_experiments = find_best_reg_experiments(reg_dir, reg_type, dataset, noise)
+                    
+                    for experiment, experiment_path in best_experiments.items():
                         # Load results
                         results = load_experiment_results(experiment_path)
                         if not results:
@@ -583,10 +625,10 @@ def main():
             compare_regularization_experiments(noise, dataset)
     
     # Create overall comparison across all datasets and noise levels
-    # create_overall_comparison(datasets_to_process, noise_to_process)
+    create_overall_comparison(datasets_to_process, noise_to_process)
     
     print(f"{'='*75}")
-    print("\tAnalysis complete! Check Reg_Compare directorie for results.")
+    print("\tAnalysis complete! Check Reg_Compare directories for results.")
     print(f"{'='*75}")
 
 if __name__ == "__main__":

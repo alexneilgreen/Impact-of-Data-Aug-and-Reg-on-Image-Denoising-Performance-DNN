@@ -1,0 +1,9 @@
+{
+    "dataset": "CIFAR10",
+    "noise_level": 0.15,
+    "best_es_value": 15,
+    "experiment_name": "base_cifar10_reg_ES_15",
+    "test_accuracy": 0.953052874962995,
+    "test_loss": 0.002255499170155852,
+    "date_processed": "2025-04-21 13:51:23"
+}
